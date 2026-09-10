@@ -7,6 +7,7 @@ export const players: Player[] = [
     nationality: "Egypt",
     position: "Forward",
     club: "Liverpool",
+      league: "Premier League",
     imageUrl: "/players/salah.jpg",
   },
   {
@@ -15,6 +16,7 @@ export const players: Player[] = [
     nationality: "France",
     position: "Forward",
     club: "Real Madrid",
+    league: "La Liga",
     imageUrl: "/players/mbappe.jpg",
   },
   {
@@ -23,6 +25,7 @@ export const players: Player[] = [
     nationality: "Belgium",
     position: "Midfielder",
     club: "Napoli",
+    league: "Serie A",
     imageUrl: "/players/de-bruyne.jpg",
   },
 ];

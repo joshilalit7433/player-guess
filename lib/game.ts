@@ -1,11 +1,14 @@
 import { Player } from "./player";
 
+const TOTAL_QUESTIONS = 10;
+
 export type GameState = {
   currentPlayerId: string;
   questionNumber: number;
   score: number;
   attempts: number;
   cluesRevealed: number;
+  usedPlayerIds: string[];
   isFinished: boolean;
 };
 
@@ -16,6 +19,7 @@ export function startGame(playerId: string): GameState {
     score: 0,
     attempts: 0,
     cluesRevealed: 0,
+    usedPlayerIds: [playerId],
     isFinished: false,
   };
 }
@@ -44,4 +48,67 @@ export function getRandomPlayer(players: Player[]): Player{
     return players[index];
 }
 
+export function getNextPlayer(
+  players: Player[],
+  usedPlayerIds: string[]
+) : Player {
+  const availablePlayers = players.filter(
+    (player) => !usedPlayerIds.includes(player.id)
+  );
 
+  if(availablePlayers.length === 0) {
+    throw new Error("No more players available.");
+  }
+
+  return getRandomPlayer(availablePlayers);
+  
+}
+
+
+export function nextQuestion(
+  state: GameState,
+  players: Player[]
+) : GameState {
+  if (state.questionNumber >= TOTAL_QUESTIONS) {
+    return {
+      ...state,
+      isFinished: true,
+    };
+  }
+
+
+const nextPlayer = getNextPlayer(players, state.usedPlayerIds);
+
+return {
+  ...state,
+  currentPlayerId: nextPlayer.id,
+  questionNumber: state.questionNumber + 1,
+  attempts: 0,
+  cluesRevealed: 0,
+  usedPlayerIds: [...state.usedPlayerIds, nextPlayer.id],
+};
+
+}
+
+export function submitAnswer(
+  state: GameState,
+  player: Player,
+  answer: string
+): GameState {
+  const isCorrect = checkAnswer(player, answer);
+
+  if (isCorrect) {
+    const points = calculateScore(state.cluesRevealed);
+
+    return {
+      ...state,
+      score: state.score + points,
+    };
+  }
+
+  return {
+    ...state,
+    attempts: state.attempts + 1,
+    cluesRevealed: Math.min(state.cluesRevealed + 1, 3),
+  };
+}

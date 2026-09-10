@@ -1,8 +1,9 @@
 export type Player = {
-    id:string;
-    name:string;
-    nationality:string;
-    position:string;
-    club:string;
-    imageUrl:string;
-}
+  id: string;
+  name: string;
+  nationality: string;
+  position: string;
+  club: string;
+  league: string;
+  imageUrl: string;
+};
