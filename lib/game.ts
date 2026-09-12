@@ -1,6 +1,7 @@
 import { Player } from "./player";
 
 const TOTAL_QUESTIONS = 10;
+const MAX_ADDITIONAL_CLUES = 1;
 
 export type GameState = {
   currentPlayerId: string;
@@ -9,6 +10,7 @@ export type GameState = {
   attempts: number;
   cluesRevealed: number;
   usedPlayerIds: string[];
+  isPlayerRevealed: boolean;
   isFinished: boolean;
 };
 
@@ -20,6 +22,7 @@ export function startGame(playerId: string): GameState {
     attempts: 0,
     cluesRevealed: 0,
     usedPlayerIds: [playerId],
+    isPlayerRevealed: false,
     isFinished: false,
   };
 }
@@ -34,41 +37,43 @@ export function calculateScore(cluesRevealed: number): number {
   return Math.max(points, 1); // Ensure the score doesn't go below 1
 }
 
-export function getClues(player: Player) {
+export function getInitialAttributes(player: Player) {
   return [
     `Nationality: ${player.nationality}`,
     `Position: ${player.position}`,
-    `Club: ${player.club}`,
+    `League: ${player.league}`,
   ];
 }
 
+export function getAdditionalClues(player: Player) {
+  return [`Club: ${player.club}`];
+}
 
-export function getRandomPlayer(players: Player[]): Player{
-    const index = Math.floor(Math.random() * players.length);
-    return players[index];
+export function getRandomPlayer(players: Player[]): Player {
+  if (players.length === 0) {
+    throw new Error("No players available.");
+  }
+
+  const index = Math.floor(Math.random() * players.length);
+  return players[index];
 }
 
 export function getNextPlayer(
   players: Player[],
-  usedPlayerIds: string[]
-) : Player {
+  usedPlayerIds: string[],
+): Player {
   const availablePlayers = players.filter(
-    (player) => !usedPlayerIds.includes(player.id)
+    (player) => !usedPlayerIds.includes(player.id),
   );
 
-  if(availablePlayers.length === 0) {
+  if (availablePlayers.length === 0) {
     throw new Error("No more players available.");
   }
 
   return getRandomPlayer(availablePlayers);
-  
 }
 
-
-export function nextQuestion(
-  state: GameState,
-  players: Player[]
-) : GameState {
+export function nextQuestion(state: GameState, players: Player[]): GameState {
   if (state.questionNumber >= TOTAL_QUESTIONS) {
     return {
       ...state,
@@ -76,24 +81,24 @@ export function nextQuestion(
     };
   }
 
+  const nextPlayer = getNextPlayer(players, state.usedPlayerIds);
 
-const nextPlayer = getNextPlayer(players, state.usedPlayerIds);
+  return {
+    ...state,
+    currentPlayerId: nextPlayer.id,
+    questionNumber: state.questionNumber + 1,
+    attempts: 0,
+    cluesRevealed: 0,
+    isPlayerRevealed: false,
 
-return {
-  ...state,
-  currentPlayerId: nextPlayer.id,
-  questionNumber: state.questionNumber + 1,
-  attempts: 0,
-  cluesRevealed: 0,
-  usedPlayerIds: [...state.usedPlayerIds, nextPlayer.id],
-};
-
+    usedPlayerIds: [...state.usedPlayerIds, nextPlayer.id],
+  };
 }
 
 export function submitAnswer(
   state: GameState,
   player: Player,
-  answer: string
+  answer: string,
 ): GameState {
   const isCorrect = checkAnswer(player, answer);
 
@@ -109,6 +114,19 @@ export function submitAnswer(
   return {
     ...state,
     attempts: state.attempts + 1,
-    cluesRevealed: Math.min(state.cluesRevealed + 1, 3),
+  };
+}
+
+export function showClue(state: GameState): GameState {
+  return {
+    ...state,
+    cluesRevealed: Math.min(state.cluesRevealed + 1, MAX_ADDITIONAL_CLUES),
+  };
+}
+
+export function revealPlayer(state: GameState): GameState {
+  return {
+    ...state,
+    isPlayerRevealed: true,
   };
 }
