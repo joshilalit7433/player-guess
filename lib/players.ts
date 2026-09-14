@@ -1,4 +1,4 @@
-import  { Player } from "./player";
+import type { Player } from "./player";
 
 export const players: Player[] = [
   {
@@ -7,7 +7,7 @@ export const players: Player[] = [
     nationality: "Egypt",
     position: "Forward",
     club: "Liverpool",
-      league: "Premier League",
+    league: "Premier League",
     imageUrl: "/players/salah.jpg",
   },
   {
@@ -27,5 +27,68 @@ export const players: Player[] = [
     club: "Napoli",
     league: "Serie A",
     imageUrl: "/players/de-bruyne.jpg",
+  },
+  {
+    id: "4",
+    name: "Erling Haaland",
+    nationality: "Norway",
+    position: "Forward",
+    club: "Manchester City",
+    league: "Premier League",
+    imageUrl: "/players/haaland.jpg",
+  },
+  {
+    id: "5",
+    name: "Vinicius Junior",
+    nationality: "Brazil",
+    position: "Forward",
+    club: "Real Madrid",
+    league: "La Liga",
+    imageUrl: "/players/vinicius.jpg",
+  },
+  {
+    id: "6",
+    name: "Jude Bellingham",
+    nationality: "England",
+    position: "Midfielder",
+    club: "Real Madrid",
+    league: "La Liga",
+    imageUrl: "/players/bellingham.jpg",
+  },
+  {
+    id: "7",
+    name: "Robert Lewandowski",
+    nationality: "Poland",
+    position: "Forward",
+    club: "Barcelona",
+    league: "La Liga",
+    imageUrl: "/players/lewandowski.jpg",
+  },
+  {
+    id: "8",
+    name: "Harry Kane",
+    nationality: "England",
+    position: "Forward",
+    club: "Bayern Munich",
+    league: "Bundesliga",
+    imageUrl: "/players/kane.jpg",
+  },
+  {
+    id: "9",
+    name: "Lautaro Martinez",
+    nationality: "Argentina",
+    position: "Forward",
+    club: "Inter Milan",
+    league: "Serie A",
+    imageUrl: "/players/lautaro.jpg",
+  },
+  {
+    id: "10",
+    name: "Rodri",
+    nationality: "Spain",
+    position: "Midfielder",
+    club: "Manchester City",
+    league: "Premier League",
+    imageUrl: "/players/rodri.jpg",
   },
 ];
