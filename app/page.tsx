@@ -1,33 +1,115 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  checkPlayerAnswer,
+  getRandomGamePlayer,
+  type GamePlayer,
+} from "./actions";
 
 export default function Home() {
+  const [player, setPlayer] = useState<GamePlayer | null>(null);
   const [answer, setAnswer] = useState("");
+
   const [attempts, setAttempts] = useState(0);
+  const [score, setScore] = useState(0);
+
   const [clueShown, setClueShown] = useState(false);
   const [revealed, setRevealed] = useState(false);
 
-  const correctAnswer = "Mohamed Salah";
+  const [isCorrect, setIsCorrect] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  function handleGuess() {
-    if (answer.trim().toLowerCase() === correctAnswer.toLowerCase()) {
-      alert("Correct! 🎉");
-    } else {
-      setAttempts(attempts + 1);
-      alert("Wrong answer!");
+  const [usedPlayerIds, setUsedPlayerIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    loadPlayer([]);
+  }, []);
+
+  async function loadPlayer(usedIds: string[]) {
+    try {
+      setIsLoading(true);
+
+      const newPlayer = await getRandomGamePlayer(usedIds);
+
+      setPlayer(newPlayer);
+      setUsedPlayerIds([...usedIds, newPlayer.id]);
+
+      setAnswer("");
+      setAttempts(0);
+      setClueShown(false);
+      setRevealed(false);
+      setIsCorrect(false);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleGuess() {
+    if (!player || !answer.trim() || isCorrect || revealed) {
+      return;
     }
 
-    setAnswer("");
+    try {
+      const correct = await checkPlayerAnswer(
+        player.id,
+        answer
+      );
+
+      if (correct) {
+        const points = clueShown ? 4 : 5;
+
+        setScore((currentScore) => currentScore + points);
+        setIsCorrect(true);
+      } else {
+        setAttempts((currentAttempts) => currentAttempts + 1);
+      }
+
+      setAnswer("");
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   function handleClue() {
-    setClueShown(true);
+    if (!clueShown && !isCorrect && !revealed) {
+      setClueShown(true);
+    }
   }
 
   function handleReveal() {
-    setRevealed(true);
+    if (!isCorrect && !revealed) {
+      setRevealed(true);
+    }
   }
+
+  async function handleNextQuestion() {
+    if (usedPlayerIds.length >= 10) {
+      return;
+    }
+
+    await loadPlayer(usedPlayerIds);
+  }
+
+  if (isLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-zinc-950 text-white">
+        <p className="text-zinc-400">Loading player...</p>
+      </main>
+    );
+  }
+
+  if (!player) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-zinc-950 text-white">
+        <p>Unable to load player.</p>
+      </main>
+    );
+  }
+
+  const questionNumber = usedPlayerIds.length;
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
@@ -40,17 +122,23 @@ export default function Home() {
           </h1>
 
           <div className="text-right">
-            <p className="text-sm text-zinc-400">Score</p>
-            <p className="text-xl font-bold">0</p>
+            <p className="text-sm text-zinc-400">
+              Score
+            </p>
+
+            <p className="text-xl font-bold">
+              {score}
+            </p>
           </div>
         </header>
 
-        {/* Question */}
+        {/* Game */}
         <section className="flex flex-1 flex-col items-center py-10">
 
+          {/* Question heading */}
           <div className="mb-6 text-center">
             <p className="text-sm font-medium uppercase tracking-widest text-zinc-400">
-              Question 1 / 10
+              Question {questionNumber} / 10
             </p>
 
             <h2 className="mt-2 text-3xl font-bold">
@@ -62,21 +150,23 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Player Image */}
+          {/* Player image */}
           <div className="relative mb-8 h-80 w-64 overflow-hidden rounded-2xl bg-zinc-800">
             <div className="flex h-full items-center justify-center text-center text-zinc-500">
               Player Image
             </div>
           </div>
 
-          {/* Initial Attributes */}
+          {/* Initial attributes */}
           <div className="grid w-full max-w-xl grid-cols-3 gap-3">
+
             <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-center">
               <p className="text-xs uppercase text-zinc-500">
                 Nationality
               </p>
+
               <p className="mt-1 font-semibold">
-                Egypt
+                {player.nationality}
               </p>
             </div>
 
@@ -84,8 +174,9 @@ export default function Home() {
               <p className="text-xs uppercase text-zinc-500">
                 Position
               </p>
+
               <p className="mt-1 font-semibold">
-                Forward
+                {player.position}
               </p>
             </div>
 
@@ -93,43 +184,37 @@ export default function Home() {
               <p className="text-xs uppercase text-zinc-500">
                 League
               </p>
+
               <p className="mt-1 font-semibold">
-                Süper Lig
+                {player.league}
               </p>
             </div>
+
           </div>
 
-          {/* Additional Clue */}
+          {/* Additional clue */}
           {clueShown && (
             <div className="mt-4 w-full max-w-xl rounded-xl border border-zinc-700 bg-zinc-900 p-4 text-center">
               <p className="text-xs uppercase text-zinc-500">
                 Club
               </p>
+
               <p className="mt-1 font-semibold">
-                Trabzonspor
+                {player.club}
               </p>
             </div>
           )}
 
-          {/* Revealed Player */}
-          {revealed && (
-            <div className="mt-6 rounded-xl bg-white px-6 py-4 text-center text-black">
-              <p className="text-xs uppercase text-zinc-500">
-                The player is
-              </p>
-              <p className="mt-1 text-2xl font-bold">
-                {correctAnswer}
-              </p>
-            </div>
-          )}
-
-          {/* Answer */}
-          {!revealed && (
+          {/* Answer input */}
+          {!isCorrect && !revealed && (
             <div className="mt-8 flex w-full max-w-xl gap-3">
+
               <input
                 type="text"
                 value={answer}
-                onChange={(event) => setAnswer(event.target.value)}
+                onChange={(event) =>
+                  setAnswer(event.target.value)
+                }
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
                     handleGuess();
@@ -145,12 +230,14 @@ export default function Home() {
               >
                 GUESS
               </button>
+
             </div>
           )}
 
           {/* Controls */}
-          {!revealed && (
+          {!isCorrect && !revealed && (
             <div className="mt-4 flex gap-3">
+
               <button
                 onClick={handleClue}
                 disabled={clueShown}
@@ -165,7 +252,51 @@ export default function Home() {
               >
                 REVEAL PLAYER
               </button>
+
             </div>
+          )}
+
+          {/* Correct answer */}
+          {isCorrect && (
+            <div className="mt-6 w-full max-w-xl rounded-xl border border-zinc-700 bg-zinc-900 p-5 text-center">
+              <p className="text-sm text-zinc-400">
+                Correct answer!
+              </p>
+
+              <p className="mt-1 text-2xl font-bold">
+                +{clueShown ? 4 : 5} points
+              </p>
+            </div>
+          )}
+
+          {/* Revealed answer */}
+          {revealed && (
+            <div className="mt-6 w-full max-w-xl rounded-xl bg-white px-6 py-5 text-center text-black">
+              <p className="text-xs uppercase text-zinc-500">
+                The player is
+              </p>
+
+              <p className="mt-1 text-2xl font-bold">
+                Player Revealed
+              </p>
+
+              <p className="mt-2 text-sm text-zinc-500">
+                Points earned: 0
+              </p>
+            </div>
+          )}
+
+          {/* Next question */}
+          {(isCorrect || revealed) && (
+            <button
+              onClick={handleNextQuestion}
+              disabled={usedPlayerIds.length >= 10}
+              className="mt-5 rounded-xl bg-white px-6 py-3 font-bold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {usedPlayerIds.length >= 10
+                ? "GAME COMPLETE"
+                : "NEXT QUESTION"}
+            </button>
           )}
 
           {/* Attempts */}
