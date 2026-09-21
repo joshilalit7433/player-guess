@@ -1,21 +1,25 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import {
   checkPlayerAnswer,
   getRandomGamePlayer,
+  revealPlayerName,
   type GamePlayer,
 } from "./actions";
 
 export default function Home() {
   const [player, setPlayer] = useState<GamePlayer | null>(null);
   const [answer, setAnswer] = useState("");
+  
 
   const [attempts, setAttempts] = useState(0);
   const [score, setScore] = useState(0);
 
   const [clueShown, setClueShown] = useState(false);
   const [revealed, setRevealed] = useState(false);
+  const [revealedName, setRevealedName] = useState("");
 
   const [isCorrect, setIsCorrect] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,6 +44,7 @@ export default function Home() {
       setClueShown(false);
       setRevealed(false);
       setIsCorrect(false);
+      setRevealedName("");
     } catch (error) {
       console.error(error);
     } finally {
@@ -79,10 +84,23 @@ export default function Home() {
     }
   }
 
-  function handleReveal() {
-    if (!isCorrect && !revealed) {
-      setRevealed(true);
+ async function handleReveal() {
+    if(!player || isCorrect || revealed){
+      return;
     }
+
+    try{
+      const name =  await revealPlayerName(player.id);
+
+      setRevealedName(name);
+      setRevealed(true);
+      
+    }
+
+    catch(error){
+      console.log(error);
+    }
+  
   }
 
   async function handleNextQuestion() {
@@ -152,9 +170,14 @@ export default function Home() {
 
           {/* Player image */}
           <div className="relative mb-8 h-80 w-64 overflow-hidden rounded-2xl bg-zinc-800">
-            <div className="flex h-full items-center justify-center text-center text-zinc-500">
-              Player Image
-            </div>
+           <Image
+           src={player.imageUrl}
+           alt="Mystery football player"
+           className={`h-full w-full object-cover transition-all duration-500 ${
+            revealed || isCorrect ? "blur-0" : "scale-110 blur-xl" }`}
+            fill
+            sizes="256px"
+           />
           </div>
 
           {/* Initial attributes */}
@@ -277,7 +300,7 @@ export default function Home() {
               </p>
 
               <p className="mt-1 text-2xl font-bold">
-                Player Revealed
+                {revealedName}
               </p>
 
               <p className="mt-2 text-sm text-zinc-500">

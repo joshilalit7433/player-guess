@@ -67,3 +67,19 @@ export async function checkPlayerAnswer(
     answer.toLowerCase().trim()
   );
 }
+
+export async function revealPlayerName(
+  playerId: string
+): Promise<string> {
+  const { data, error } = await supabase
+    .from("players")
+    .select("name")
+    .eq("id", playerId)
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to reveal player: ${error.message}`);
+  }
+
+  return data.name;
+}
