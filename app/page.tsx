@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { Toaster, toast } from "sonner";
-import { useEffect, useState } from "react";
+import { useEffect,useRef, useState } from "react";
 import {
   checkPlayerAnswer,
   getRandomGamePlayer,
@@ -11,6 +11,7 @@ import {
 } from "./actions";
 
 export default function Home() {
+  const [gameStarted, setGameStarted] = useState(false);
   const [player, setPlayer] = useState<GamePlayer | null>(null);
   const [answer, setAnswer] = useState("");
 
@@ -22,15 +23,21 @@ export default function Home() {
   const [revealedName, setRevealedName] = useState("");
 
   const [isCorrect, setIsCorrect] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+const isSubmittingRef = useRef(false);
 
+
+  const [correctAnswers, setCorrectAnswers] = useState(0);
   const [gameComplete, setGameComplete] = useState(false);
 
   const [usedPlayerIds, setUsedPlayerIds] = useState<string[]>([]);
 
   useEffect(() => {
-    loadPlayer([]);
-  }, []);
+    if (gameStarted) {
+      loadPlayer([]);
+    }
+  }, [gameStarted]);
 
   async function loadPlayer(usedIds: string[]) {
     try {
@@ -56,9 +63,11 @@ export default function Home() {
   }
 
   async function handleGuess() {
-    if (!player || !answer.trim() || isCorrect || revealed) {
+    if (!player || !answer.trim() || isCorrect || revealed || isSubmittingRef.current) {
       return;
     }
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
 
     try {
       const correct = await checkPlayerAnswer(player.id, answer);
@@ -68,6 +77,7 @@ export default function Home() {
 
         setScore((currentScore) => currentScore + points);
         setIsCorrect(true);
+        setCorrectAnswers((currentCorrect) => currentCorrect + 1);
         toast.success("Correct Guess", {
           description: `You earned ${points} points!`,
         });
@@ -82,6 +92,10 @@ export default function Home() {
       setAnswer("");
     } catch (error) {
       console.error(error);
+    }
+    finally{
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
     }
   }
 
@@ -119,6 +133,7 @@ export default function Home() {
     setGameComplete(false);
     setScore(0);
     setUsedPlayerIds([]);
+    setCorrectAnswers(0);
 
     await loadPlayer([]);
   }
@@ -127,6 +142,39 @@ export default function Home() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-zinc-950 text-white">
         <p className="text-zinc-400">Loading player...</p>
+      </main>
+    );
+  }
+
+  if (!gameStarted) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-zinc-950 px-6 text-white">
+        <div className="w-full max-w-2xl text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-zinc-500">
+            Football Player Guessing Game
+          </p>
+
+          <h1 className="mt-4 text-6xl font-black tracking-tight">
+            PLAYER-GUESS
+          </h1>
+
+          <p className="mx-auto mt-5 max-w-lg text-lg text-zinc-400">
+            Can you identify the footballer from their blurred image and clues?
+          </p>
+
+          <button
+            onClick={() => setGameStarted(true)}
+            className="mt-10 rounded-xl bg-white px-10 py-4 text-sm font-bold tracking-wide text-black transition hover:bg-zinc-200 active:scale-95"
+          >
+            START GAME
+          </button>
+
+          <div className="mt-8 flex justify-center gap-8 text-sm text-zinc-500">
+            <span>10 Questions</span>
+            <span>•</span>
+            <span>5 Points Each</span>
+          </div>
+        </div>
       </main>
     );
   }
@@ -170,29 +218,43 @@ export default function Home() {
               You completed all 10 questions.
             </p>
 
-            {/* Score Card */}
-            <div className="mt-10 grid w-full max-w-md grid-cols-2 gap-4">
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-                <p className="text-sm text-zinc-500">Final Score</p>
+            {/* Final Score */}
+            <div className="mt-10 w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-8 text-center">
+              <p className="text-sm font-medium uppercase tracking-widest text-zinc-500">
+                Final Score
+              </p>
 
-                <p className="mt-2 text-4xl font-bold">{score}</p>
+              <p className="mt-3 text-6xl font-bold">
+                {score}
+                <span className="text-2xl text-zinc-500"> / 50</span>
+              </p>
 
-                <p className="mt-1 text-sm text-zinc-500">/ 50 points</p>
+              <p className="mt-2 text-sm text-zinc-500">points</p>
+            </div>
+
+            {/* Game Stats */}
+            <div className="mt-4 grid w-full max-w-md grid-cols-2 gap-4">
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 text-center">
+                <p className="text-xs uppercase tracking-wider text-zinc-500">
+                  Correct
+                </p>
+
+                <p className="mt-2 text-3xl font-bold">{correctAnswers}/10</p>
               </div>
 
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-                <p className="text-sm text-zinc-500">Questions</p>
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 text-center">
+                <p className="text-xs uppercase tracking-wider text-zinc-500">
+                  Questions
+                </p>
 
-                <p className="mt-2 text-4xl font-bold">10</p>
-
-                <p className="mt-1 text-sm text-zinc-500">completed</p>
+                <p className="mt-2 text-3xl font-bold">10/10</p>
               </div>
             </div>
 
             {/* Play Again */}
             <button
               onClick={playAgain}
-              className="mt-8 rounded-xl bg-white px-8 py-3 font-bold text-black transition hover:bg-zinc-200"
+              className="mt-8 rounded-xl bg-white px-10 py-4 text-sm font-bold tracking-wide text-black transition hover:bg-zinc-200 active:scale-95"
             >
               PLAY AGAIN
             </button>
@@ -249,7 +311,7 @@ export default function Home() {
           </div>
 
           {/* Initial attributes */}
-          <div className="grid w-full max-w-xl grid-cols-3 gap-3">
+          <div className="grid w-full max-w-xl grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-center">
               <p className="text-xs uppercase text-zinc-500">Nationality</p>
 
@@ -284,6 +346,7 @@ export default function Home() {
               <input
                 type="text"
                 value={answer}
+                disabled={isSubmitting}
                 onChange={(event) => setAnswer(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
@@ -296,9 +359,10 @@ export default function Home() {
 
               <button
                 onClick={handleGuess}
+                disabled={isSubmitting}
                 className="rounded-xl bg-white px-6 py-3 font-bold text-black transition hover:bg-zinc-200"
               >
-                GUESS
+                {isSubmitting ? "Checking..." : "GUESS"}
               </button>
             </div>
           )}
@@ -352,7 +416,7 @@ export default function Home() {
               disabled={false}
               className="mt-5 rounded-xl bg-white px-6 py-3 font-bold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
             >
-               NEXT QUESTION
+              NEXT QUESTION
             </button>
           )}
 
